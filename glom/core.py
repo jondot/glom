@@ -255,17 +255,33 @@ class Path(object):
 
     """
     def __init__(self, *path_parts):
-        self.path_parts = list(path_parts)
+        path_t = T
+        for part in path_parts:
+            if isinstance(part, Path):
+                part = part.path_t
+            if isinstance(part, _TType):
+                sub_parts = _T_PATHS[part]
+            else:
+                sub_parts = ('P', part)
+            while i < len(sub_parts):
+                path_t = _t_child(path_t, sub_parts[i], sub_parts[i + 1])
+                i += 2
+        self.path_t = path_t
 
     def append(self, part):
-        self.path_parts.append(part)
+        assert not isinstance(part, _TType), "call extend or +?"
+        assert not isinstance(part, Path), "call extend or +?"
+        self.path_t = _t_child(self.path_t, 'P', part)
 
     def __getitem__(self, idx):
-        return self.path_parts.__getitem__(idx)
+        # TODO: is this still needed?
+        return _T_PATHS[self.path_t][idx * 2 + 1]
 
     def __repr__(self):
+        # TODO: FIXME to not assume all parts are 'P'
+        path_parts = _T_PATHS[self.path_t][1::2]
         cn = self.__class__.__name__
-        return '%s(%s)' % (cn, ', '.join([repr(p) for p in self.path_parts]))
+        return '%s(%s)' % (cn, ', '.join([repr(p) for p in path_parts]))
 
 
 class Literal(object):
